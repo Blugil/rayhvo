@@ -2,11 +2,15 @@
 #define HITTABLE_H
 
 #include "interval.h"
+#include "aabb.h"
+
+class material;
 
 class hit_record {
   public:
     point3 p;
     vec3 normal;
+    shared_ptr<material> mat;
     double t;
     bool front_face;
 
@@ -30,6 +34,8 @@ class hittable {
     virtual ~hittable() = default;
 
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+
+    virtual aabb bounding_box() const = 0;
 };
 
 #endif 
