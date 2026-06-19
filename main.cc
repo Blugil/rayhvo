@@ -1,10 +1,14 @@
 #include "raytracer.h"
 
 
+#include "bvh.h"
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+
+
+
 #include <memory>
 
 int main() {
@@ -53,13 +57,15 @@ int main() {
   auto metalic = make_shared<metal>(color(0.5,0.9,0.2), 0.0);
   world.add(make_shared<sphere>(point3(4,1,0), 1.0, metalic));
 
-  
+  // the fruits of our labor
+  world = hittable_list(make_shared<bvh_node>(world));
+
 
   camera cam;
 
   cam.aspect_ratio = 16.0 / 9.0;
   cam.image_width = 400;
-  cam.samples_per_pixel = 50;
+  cam.samples_per_pixel = 20;
   cam.max_depth = 50;
 
 

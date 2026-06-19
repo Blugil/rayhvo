@@ -1,4 +1,5 @@
 *.o
-*.dSYM
+/*.dSYM
 *.out
 *.ppm
+.DS_STORE
