@@ -5,6 +5,9 @@
 #include "vec3.h"
 class aabb {
   public:
+
+    static const aabb empty, universe;
+
     interval x, y, z;
     aabb() {}
 
@@ -30,7 +33,7 @@ class aabb {
     }
 
     bool hit (const ray& r, interval ray_t) const {
-      const point3& ray_org = r.origin(); 
+      const point3& ray_orig = r.origin(); 
       const vec3& ray_dir = r.direction();
 
       for (int axis = 0; axis < 3; axis++) {
@@ -38,8 +41,8 @@ class aabb {
         const double adinv = 1.0 / ray_dir[axis];
 
 
-        auto t0 = (ax.min - ray_org[axis]) * adinv;
-        auto t1 = (ax.max - ray_org[axis]) * adinv;
+        auto t0 = (ax.min - ray_orig[axis]) * adinv;
+        auto t1 = (ax.max - ray_orig[axis]) * adinv;
 
         if (t0 < t1) {
           if (t0 > ray_t.min) ray_t.min = t0;
@@ -56,8 +59,18 @@ class aabb {
       return true;
     }
 
-  private:
-    //stuff
+    int longest_axis() const {
+      if (x.size() > y.size()) {
+        return x.size() > z.size() ? 0 : 2;
+      }
+      else {
+        return y.size() > z.size() ? 1 : 2;
+      }
+    }
+
 };
+
+const aabb aabb::empty = aabb(interval::empty, interval::empty, interval::empty);
+const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
 #endif
