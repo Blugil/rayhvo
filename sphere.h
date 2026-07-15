@@ -4,8 +4,10 @@
 
 #include "hittable.h"
 #include "interval.h"
+#include "raytracer.h"
 #include "vec3.h"
 #include "aabb.h"
+#include <cmath>
 #include <memory>
 
 class sphere : public hittable {
@@ -58,6 +60,8 @@ class sphere : public hittable {
 
       vec3 outward_normal = (rec.p - current_center) / radius;
       rec.set_face_normal(r, outward_normal);
+      // uv coordinate map for textures
+      get_sphere_uv(outward_normal, rec.u, rec.v);
       rec.mat = mat;
 
       return true;
@@ -68,6 +72,15 @@ class sphere : public hittable {
     double radius;
     shared_ptr<material> mat;
     aabb bbox;
+
+
+    static void get_sphere_uv(const point3& p, double& u, double& v) {
+      auto theta = std::acos(-p.y());
+      auto phi = std::atan2(-p.z(), p.x()) + pi;
+
+      u = phi / (2 * pi);
+      v = theta / pi;
+    }
 };
 
 
