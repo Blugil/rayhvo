@@ -151,4 +151,67 @@ inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
   return r_out_perp + r_out_parallel;
 }
 
+inline vec3 rotate_vector(vec3& u, double alpha, double beta, double gamma) {
+
+  auto alpha_r = degrees_to_radians(alpha);
+  auto beta_r = degrees_to_radians(beta);
+  auto gamma_r = degrees_to_radians(gamma);
+
+  auto cos_a = std::cos(alpha_r);
+  auto cos_b = std::cos(beta_r);
+  auto cos_g = std::cos(gamma_r);
+
+  auto sin_a = std::sin(alpha_r);
+  auto sin_b = std::sin(beta_r);
+  auto sin_g = std::sin(gamma_r);
+
+
+  auto x = ((cos_a * cos_b) * u.x()) 
+    + ((cos_a * sin_b * sin_g - sin_a * cos_g) * u.y())
+    + ((cos_a * sin_b * cos_g + sin_a * sin_g) * u.z());
+
+  auto y = ((sin_a * cos_b) * u.x()) 
+    + ((sin_a * sin_b * sin_g + cos_a * cos_g) * u.y())
+    + ((sin_a * sin_b * cos_g - cos_a * sin_g) * u.z());
+
+  auto z = ((-sin_b) * u.x())
+    + ((cos_b * sin_g) * u.y())
+    + ((cos_b * cos_g) * u.z());
+
+
+  return vec3(x, y, z);
+}
+
+inline point3 rotate_point(point3& p, double alpha, double beta, double gamma) {
+
+  auto alpha_r = degrees_to_radians(alpha);
+  auto beta_r = degrees_to_radians(beta);
+  auto gamma_r = degrees_to_radians(gamma);
+
+  auto cos_a = std::cos(alpha_r);
+  auto cos_b = std::cos(beta_r);
+  auto cos_g = std::cos(gamma_r);
+
+  auto sin_a = std::sin(alpha_r);
+  auto sin_b = std::sin(beta_r);
+  auto sin_g = std::sin(gamma_r);
+
+  auto x = ((cos_a * cos_b) * p.x()) 
+    + ((cos_a * sin_b * sin_g - sin_a * cos_g) * p.y())
+    + ((cos_a * sin_b * cos_g + sin_a * sin_g) * p.z());
+
+  auto y = ((sin_a * cos_b) * p.x()) 
+    + ((sin_a * sin_b * sin_g + cos_a * cos_g) * p.y())
+    + ((sin_a * sin_b * cos_g - cos_a * sin_g) * p.z());
+
+  auto z = ((-sin_b) * p.x())
+    + ((cos_b * sin_g) * p.y())
+    + ((cos_b * cos_g) * p.z());
+
+
+  return point3(x, y, z);
+}
+
+
+
 #endif

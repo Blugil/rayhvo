@@ -60,6 +60,8 @@ class camera {
 
     void initialize() {
 
+      //background = color(0.3, 0.2, 0.8);
+
       image_height = int(image_width / aspect_ratio);
       image_height = (image_height < 1) ? 1 : image_height;
 
