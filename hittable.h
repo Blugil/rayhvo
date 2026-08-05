@@ -90,9 +90,10 @@ class rotate : public hittable {
       for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
           for (int k = 0; k < 2; k++) {
+            // grabs the min or max
             auto x = i*bbox.x.max + (1-i)*bbox.x.min;
-            auto y = j*bbox.y.max + (1-i)*bbox.y.min;
-            auto z = k*bbox.z.max + (1-i)*bbox.z.min;
+            auto y = j*bbox.y.max + (1-j)*bbox.y.min;
+            auto z = k*bbox.z.max + (1-k)*bbox.z.min;
 
             auto tester = vec3(x,y,z);
             tester = rotate_vector(tester, alpha, beta, gamma);
@@ -129,13 +130,10 @@ class rotate : public hittable {
 
     }
 
-
-
     aabb bounding_box() const override { return bbox; }
 
 
   private:
-    double cos_theta, sin_theta;
     double alpha, beta, gamma;
     shared_ptr<hittable> object;
     aabb bbox;

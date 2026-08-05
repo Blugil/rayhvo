@@ -67,6 +67,7 @@ class sphere : public hittable {
       return true;
     }
 
+
   private:
     ray center;
     double radius;

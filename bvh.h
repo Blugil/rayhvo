@@ -54,6 +54,7 @@ class bvh_node : public hittable {
       return hit_left || hit_right;
     }
 
+
     aabb bounding_box() const override { return bbox; }
 
 

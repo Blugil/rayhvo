@@ -3,8 +3,10 @@
 
 #include "hittable.h"
 #include "hittable_list.h"
+#include "material.h"
 #include "raytracer.h"
 #include "vec3.h"
+#include <iostream>
 
 class quad : public hittable {
   public:
@@ -69,6 +71,42 @@ class quad : public hittable {
 
     }
 
+    void translate(const vec3& t_vector) {
+      this->Q = Q + t_vector; 
+
+      auto n = cross(u, v);
+      this->normal = unit_vector(n);
+      this->D = dot(normal, Q);
+      this->w = n / dot(n, n);
+      set_bounding_box();
+    }
+
+    void rotate(double alpha, double beta, double gamma) {
+      this->Q = rotate_point(this->Q, gamma, beta, alpha);
+      this->u = rotate_vector(this->u, gamma, beta, alpha);
+      this->v = rotate_vector(this->v, gamma, beta, alpha);
+
+      auto n = cross(u, v);
+      this->normal = unit_vector(n);
+      this->D = dot(normal, Q);
+      this->w = n / dot(n, n);
+      set_bounding_box();
+    }
+
+    void rotate_centroid_origin(double alpha, double beta, double gamma) {
+
+      // find the centroid 
+      auto x_center = ((this->bbox.x.max - this->bbox.x.min) / 2.0) + this->bbox.x.min;
+      auto y_center = ((this->bbox.y.max - this->bbox.y.min) / 2.0) + this->bbox.y.min;
+      auto z_center = ((this->bbox.z.max - this->bbox.z.min) / 2.0) + this->bbox.z.min;
+
+      auto centroid = point3(-x_center, -y_center, -z_center);
+
+      translate(centroid);
+      rotate(alpha, beta, gamma);
+      translate(-centroid);
+    }
+
 
   private:
     point3 Q;
@@ -78,6 +116,24 @@ class quad : public hittable {
     aabb bbox;
     vec3 normal; 
     double D;
+
+    void print_bounding_box() {
+      std::clog << this->bbox.x.max << std::endl;
+      std::clog << this->bbox.x.min << std::endl;
+      std::clog << this->bbox.y.max << std::endl;
+      std::clog << this->bbox.y.min << std::endl;
+      std::clog << this->bbox.z.max << std::endl;
+      std::clog << this->bbox.z.min << std::endl;
+
+      auto x_center = (this->bbox.x.max - this->bbox.x.min) / 2.0;
+      auto y_center = (this->bbox.y.max - this->bbox.y.min) / 2.0;
+      auto z_center = (this->bbox.z.max - this->bbox.z.min) / 2.0;
+
+      auto centroid = point3(x_center, y_center, z_center);
+
+      std::clog << centroid.x() << " " << centroid.y() << " " << centroid.z() << std::endl;
+    }
+
 };
 
 
@@ -91,12 +147,15 @@ inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_pt
   auto dy = vec3(0, max.y() - min.y(), 0);
   auto dz = vec3(0,0,max.z() - min.z());
 
+  auto blue = make_shared<lambertian>(color(0.150,0.01,1.00));
+  auto green = make_shared<lambertian>(color(0.150,0.91,0.20));
+
   sides->add(make_shared<quad>(point3(min.x(), min.y(), max.z()),  dx,  dy, mat)); // front
-  sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz,  dy, mat)); // right
+  sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz,  dy, blue)); // right
   sides->add(make_shared<quad>(point3(max.x(), min.y(), min.z()), -dx,  dy, mat)); // back
-  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dz,  dy, mat)); // left
-  sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()),  dx, -dz, mat)); // top
-  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dx,  dz, mat)); // bottom
+  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dz,  dy, blue)); // left
+  sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()),  dx, -dz, green)); // top
+  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dx,  dz, green)); // bottom
 
 
   return sides;
