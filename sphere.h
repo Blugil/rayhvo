@@ -67,6 +67,19 @@ class sphere : public hittable {
       return true;
     }
 
+    void translate(const vec3& v) override {
+      return;
+    }
+
+    void rotate_axis(double x, double y, double z, const point3& p) override {
+      return;
+    }
+
+    /*
+    void rotate_centroid(double x, double y, double z) {
+      rotate(x, y, z, bbox.centroid());
+    }
+    */
 
   private:
     ray center;

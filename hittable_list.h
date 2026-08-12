@@ -3,6 +3,7 @@
 
 #include "aabb.h"
 #include "hittable.h"
+#include "vec3.h"
 #include <vector>
 
 
@@ -34,6 +35,22 @@ class hittable_list : public hittable {
       }
 
       return hit_anything;
+    }
+
+    void translate(const vec3& v) override {
+      bbox = aabb();
+      for (const auto& object : objects) {
+        object->translate(v);
+        bbox = aabb(bbox, object->bounding_box());
+      }
+    }
+
+    // in this function, the translate's manage the bounding box
+    // each rotation ends with a translation (and recalculation) of the items bounding box)
+    void rotate_axis(double x, double y, double z, const point3& p) override {
+      for (const auto& object : objects) {
+        object->rotate_axis(x, y, z, p);
+      }
     }
 
     aabb bounding_box() const override { return bbox; }

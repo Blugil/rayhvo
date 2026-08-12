@@ -7,6 +7,7 @@
 #include "raytracer.h"
 #include "vec3.h"
 #include <iostream>
+#include <memory>
 
 class quad : public hittable {
   public:
@@ -64,49 +65,40 @@ class quad : public hittable {
       if (!unit_interval.contains(a) || !unit_interval.contains(b))
         return false;
 
-
       rec.u = a;
       rec.v = b;
       return true;
 
     }
 
-    void translate(const vec3& t_vector) {
+    // translates to a point 
+    void translate(const vec3& t_vector) override {
       this->Q = Q + t_vector; 
 
       auto n = cross(u, v);
       this->normal = unit_vector(n);
       this->D = dot(normal, Q);
       this->w = n / dot(n, n);
+
       set_bounding_box();
     }
 
-    void rotate(double alpha, double beta, double gamma) {
-      this->Q = rotate_point(this->Q, gamma, beta, alpha);
-      this->u = rotate_vector(this->u, gamma, beta, alpha);
-      this->v = rotate_vector(this->v, gamma, beta, alpha);
+    // rotate an item around an axis who's origin is defined by a point
+    void rotate_axis(double x, double y, double z, const point3& p) override {
+      translate(-p);
+
+      this->Q = rotate_point(this->Q, z, y, x);
+      this->u = rotate_vector(this->u, z, y, x);
+      this->v = rotate_vector(this->v, z, y, x);
 
       auto n = cross(u, v);
       this->normal = unit_vector(n);
       this->D = dot(normal, Q);
       this->w = n / dot(n, n);
       set_bounding_box();
+
+      translate(p);
     }
-
-    void rotate_centroid_origin(double alpha, double beta, double gamma) {
-
-      // find the centroid 
-      auto x_center = ((this->bbox.x.max - this->bbox.x.min) / 2.0) + this->bbox.x.min;
-      auto y_center = ((this->bbox.y.max - this->bbox.y.min) / 2.0) + this->bbox.y.min;
-      auto z_center = ((this->bbox.z.max - this->bbox.z.min) / 2.0) + this->bbox.z.min;
-
-      auto centroid = point3(-x_center, -y_center, -z_center);
-
-      translate(centroid);
-      rotate(alpha, beta, gamma);
-      translate(-centroid);
-    }
-
 
   private:
     point3 Q;
@@ -117,26 +109,9 @@ class quad : public hittable {
     vec3 normal; 
     double D;
 
-    void print_bounding_box() {
-      std::clog << this->bbox.x.max << std::endl;
-      std::clog << this->bbox.x.min << std::endl;
-      std::clog << this->bbox.y.max << std::endl;
-      std::clog << this->bbox.y.min << std::endl;
-      std::clog << this->bbox.z.max << std::endl;
-      std::clog << this->bbox.z.min << std::endl;
-
-      auto x_center = (this->bbox.x.max - this->bbox.x.min) / 2.0;
-      auto y_center = (this->bbox.y.max - this->bbox.y.min) / 2.0;
-      auto z_center = (this->bbox.z.max - this->bbox.z.min) / 2.0;
-
-      auto centroid = point3(x_center, y_center, z_center);
-
-      std::clog << centroid.x() << " " << centroid.y() << " " << centroid.z() << std::endl;
-    }
-
 };
 
-
+// test function that makes a box out of quads
 inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_ptr<material> mat) {
   auto sides = make_shared<hittable_list>();
 
@@ -151,11 +126,11 @@ inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_pt
   auto green = make_shared<lambertian>(color(0.150,0.91,0.20));
 
   sides->add(make_shared<quad>(point3(min.x(), min.y(), max.z()),  dx,  dy, mat)); // front
-  sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz,  dy, blue)); // right
+  sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz,  dy, mat)); // right
   sides->add(make_shared<quad>(point3(max.x(), min.y(), min.z()), -dx,  dy, mat)); // back
-  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dz,  dy, blue)); // left
-  sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()),  dx, -dz, green)); // top
-  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dx,  dz, green)); // bottom
+  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dz,  dy, mat)); // left
+  sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()),  dx, -dz, mat)); // top
+  sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dx,  dz, mat)); // bottom
 
 
   return sides;

@@ -54,6 +54,10 @@ class bvh_node : public hittable {
       return hit_left || hit_right;
     }
 
+    void translate(const vec3& v) override { return; };
+    void rotate_axis(double x, double y, double z, const point3& p) override { return; };
+    //void rotate_centroid(double x, double y, double z) override { rotate(x, y, z, bbox.centroid()); };
+
 
     aabb bounding_box() const override { return bbox; }
 

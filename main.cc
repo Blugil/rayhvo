@@ -301,14 +301,6 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
     for (int j = 0; j < ns; j++) {
         boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));
     }
-
-    //world.add(make_shared<translate>(
-    //    make_shared<rotate>(
-    //        make_shared<bvh_node>(boxes2), 0, 15, 0),
-    //        vec3(-100,270,395)
-    //    )
-    //);
-
     camera cam;
 
     cam.aspect_ratio      = 1.0;
@@ -328,37 +320,37 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
 }
 
 void rotating() {
+
   hittable_list world;
+  auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(25,25,25));
 
-  auto light = make_shared<diffuse_light>(color(27, 27, 27));
-  auto red = make_shared<lambertian>(color(1.0,0.0,0.0));
-  auto blue = make_shared<lambertian>(color(0.0,0.0,1.0));
 
-  shared_ptr<hittable> box2 = box(point3(195,195,195), point3(350,350,350), red);
-  //box2 = make_shared<rotate>(box2, 20, 20, 20);
-  //world.add(box2);
-  
+  world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // right wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // left wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), green)); //bottom wall
+  world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), green)); // top wall
+  world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));// back wall
+
+
   world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
-  shared_ptr<hittable> r_quad = make_shared<quad>(point3(0,0,0), vec3(165,0,0), vec3(0,165,0), red);
 
-  auto child = std::static_pointer_cast<quad>(r_quad);
-  //child->rotate(90, 0, 0);
-  
-  child->translate(vec3(195, 195, 0));
-  child->rotate_centroid_origin(0, 0, 45);
+  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), red);
 
-  ////shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
-  //r_quad = make_shared<translate>(r_quad, vec3(0,195,65));
-  //r_quad = make_shared<rotate>(r_quad, 20, 20, 20);
-  world.add(child);
+  box2->translate(vec3(195, 195, 195));
+  box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  world.add(box2);
 
   camera cam;
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 400;
-  cam.samples_per_pixel = 100;
+  cam.samples_per_pixel = 5000;
   cam.max_depth = 50;
-  cam.background = color(0.1,0.2,0.9);
+  cam.background = color(0, 0, 0);
 
   cam.vfov = 40;
   cam.lookfrom = point3(278, 278, -800);
@@ -379,7 +371,7 @@ int main(int argc, char* argv[]) {
     scene = std::stoi(argv[1]);
   }
 
-  switch(8) {
+  switch(scene) {
     case 1:
       many_spheres();
       break;
