@@ -23,17 +23,16 @@ class camera {
     point3 lookat = point3(0,0,-1);
     vec3 vup = vec3(0,1,0);
 
-
     double defocus_angle = 0;
     double focus_dist = 10;
 
-
     bool threaded = false;
+    int num_threads = 0;
 
     void render(const hittable& world) {
       initialize();
 
-      int num_threads = std::thread::hardware_concurrency() <= 8 ? std::thread::hardware_concurrency() - 1: 7; 
+      num_threads = std::thread::hardware_concurrency() <= 8 ? std::thread::hardware_concurrency() - 1: 3; 
 
       // support multithreading && multithreading flag set
       if (num_threads > 1 && threaded) {
@@ -44,15 +43,15 @@ class camera {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         // the main render loop
-        for (int j = 0; j < image_height;) {
+        for (int line = 0; line < image_height;) {
 
-          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          std::clog << "\rScanlines remaining: " << (image_height - line) << ' ' << std::flush;
           std::vector<color> scanlines(image_width * num_threads);
 
           // initialize the threads
-          for (size_t i = 0; i < num_threads; i++, j++) {
-            // threads take in: the index of the buffer and the world object
-            threads.emplace_back([this, i, j, &scanlines, &world](){this->render_line(i, j, scanlines, world); });
+          for (size_t t_idx = 0; t_idx < num_threads && line < image_height; line++, t_idx++) {
+            // threads take in: thread index, line #, the scanline buffer, and the world object
+            threads.emplace_back([this, t_idx, line, &scanlines, &world](){this->render_line(t_idx, line, scanlines, world); });
           }
 
           // join all the threads
@@ -68,6 +67,7 @@ class camera {
           scanlines.clear();
         }
       }
+
       else {
 
         for (int j = 0; j < image_height; j++) {
