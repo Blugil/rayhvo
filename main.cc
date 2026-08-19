@@ -340,15 +340,58 @@ void rotating() {
 
   shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), red);
 
-  box2->translate(vec3(195, 195, 195));
   box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  box2->translate(vec3(195, 195, 195));
   world.add(box2);
 
   camera cam;
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 400;
-  cam.samples_per_pixel = 5000;
+  cam.samples_per_pixel = 100;
+  cam.max_depth = 50;
+  cam.background = color(0, 0, 0);
+
+  cam.vfov = 40;
+  cam.lookfrom = point3(278, 278, -800);
+  cam.lookat = point3(278, 278, 0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.render(world);
+}
+
+void threads() {
+
+  hittable_list world;
+  auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(25,25,25));
+
+
+  world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // right wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // left wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), green)); //bottom wall
+  world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), green)); // top wall
+  world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));// back wall
+
+
+  world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
+
+  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), red);
+
+  box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  box2->translate(vec3(195, 195, 195));
+  world.add(box2);
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 400;
+  cam.samples_per_pixel = 2000;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -365,7 +408,7 @@ void rotating() {
 
 int main(int argc, char* argv[]) {
 
-  auto scene = 8;
+  auto scene = 9;
 
   if (argc >= 2) {
     scene = std::stoi(argv[1]);
@@ -395,6 +438,9 @@ int main(int argc, char* argv[]) {
       break;
     case 8:
       rotating();
+      break;
+    case 9:
+      threads();
       break;
     default:
       rotating();

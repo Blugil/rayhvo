@@ -2,10 +2,12 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "hittable_list.h"
 #include "material.h"
 #include "raytracer.h"
 #include "vec3.h"
 #include <ostream>
+#include <thread>
 
 
 class camera {
@@ -26,23 +28,62 @@ class camera {
     double focus_dist = 10;
 
 
+    bool threaded = false;
+
     void render(const hittable& world) {
       initialize();
 
-      std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+      int num_threads = std::thread::hardware_concurrency() <= 8 ? std::thread::hardware_concurrency() - 1: 7; 
 
-      for (int j = 0; j < image_height; j++) {
-        std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-        for (int i = 0; i < image_width; i++) {
-          color pixel_color(0,0,0);
-          for (int sample = 0; sample < samples_per_pixel; sample++) {
-            ray r = get_ray(i, j);
-            pixel_color += ray_color(r, max_depth, world);
+      // support multithreading && multithreading flag set
+      if (num_threads > 1 && threaded) {
+        // single threading code goes here
+        std::clog << "threads: " << num_threads << std::endl;
+        std::vector<std::thread> threads(num_threads);
+        std::vector<color*> scanline(image_width);
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        // the main render loop
+        for (int j = 0; j < image_height;) {
+
+          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          std::vector<color> scanlines(image_width * num_threads);
+
+          // initialize the threads
+          for (size_t i = 0; i < num_threads; i++, j++) {
+            // threads take in: the index of the buffer and the world object
+            threads.emplace_back([this, i, j, &scanlines, &world](){this->render_line(i, j, scanlines, world); });
           }
-          write_color(std::cout, pixel_samples_scale * pixel_color);
+
+          // join all the threads
+          for (auto& t : threads) {
+            if (t.joinable()) t.join();
+          }
+
+          // write to file code, right now we just dump into the stdout like normal
+          for (auto pixel_color : scanlines) {
+            write_color(std::cout, pixel_samples_scale * pixel_color);
+          }
+          threads.clear();
+          scanlines.clear();
         }
       }
-      std::clog << "\rDone.               \n";
+      else {
+
+        for (int j = 0; j < image_height; j++) {
+          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          for (int i = 0; i < image_width; i++) {
+            color pixel_color(0,0,0);
+            for (int sample = 0; sample < samples_per_pixel; sample++) {
+              ray r = get_ray(i, j);
+              pixel_color += ray_color(r, max_depth, world);
+            }
+            write_color(std::cout, pixel_samples_scale * pixel_color);
+          }
+
+        std::clog << "\rDone.               \n";
+        }
+      }
     }
 
 
@@ -59,8 +100,6 @@ class camera {
     vec3 defocus_disk_v;
 
     void initialize() {
-
-      //background = color(0.3, 0.2, 0.8);
 
       image_height = int(image_width / aspect_ratio);
       image_height = (image_height < 1) ? 1 : image_height;
@@ -82,7 +121,6 @@ class camera {
       auto viewport_u = viewport_width * u;
       auto viewport_v = viewport_height * -v;
 
-
       
       //calculate the horizontal and vertical delta vectors from pixel to pixel 
       pixel_delta_u = viewport_u / image_width;
@@ -95,6 +133,18 @@ class camera {
       defocus_disk_u = u * defocus_radius;
       defocus_disk_v = v * defocus_radius;
 
+    }
+
+    void render_line(size_t idx, int line, std::vector<color>& scanlines, const hittable& world) {
+      for (int i = 0; i < image_width; i++) {
+        color pixel_color(0,0,0);
+        for (int sample = 0; sample < samples_per_pixel; sample++) {
+          ray r = get_ray(i, line);
+          pixel_color += ray_color(r, max_depth, world);
+        }
+        //std::clog << pixel_color.x() << pixel_color.y() << pixel_color.z() << std::endl;
+        scanlines[idx * image_width + i] = pixel_color;
+      }
     }
 
     ray get_ray(int i, int j) const {
