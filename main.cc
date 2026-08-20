@@ -10,7 +10,12 @@
 #include "texture.h"
 #include "vec3.h"
 
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
+#include <thread>
+
+#include "unistd.h"
 
 void many_spheres() {
 
@@ -362,7 +367,7 @@ void rotating() {
   cam.render(world);
 }
 
-void threads() {
+void test_threads(int num_t, int threaded) {
 
   hittable_list world;
   auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
@@ -390,8 +395,8 @@ void threads() {
   camera cam;
 
   cam.aspect_ratio = 1.0;
-  cam.image_width = 400;
-  cam.samples_per_pixel = 2000;
+  cam.image_width = 100;
+  cam.samples_per_pixel = 100;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -402,18 +407,43 @@ void threads() {
 
   cam.defocus_angle = 0;
 
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
   cam.render(world);
 }
 
 
 int main(int argc, char* argv[]) {
 
-  auto scene = 9;
+  int opt, threaded;
+  int scene = 0;
+  int num_threads = 0;
 
-  if (argc >= 2) {
-    scene = std::stoi(argv[1]);
+
+  // light command line parser with getopt basically stolen from the man page
+  // order matters
+  while ((opt = getopt(argc, argv, "hs:t:")) != -1) {
+    switch(opt) {
+      case 'h':
+        printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
+        break;
+      case 's':
+        scene = atoi(optarg);
+        break;
+      case 't':
+        num_threads = atoi(optarg);
+        threaded = 1;
+        break;
+      default:
+        //fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
   }
 
+  
+  //fprintf(stderr, "scene: %d, threads: %d\n", scene, num_threads);
+  //std::clog << "scene: " << scene << " threads: " << num_threads << std::endl;
   switch(scene) {
     case 1:
       many_spheres();
@@ -440,10 +470,10 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      threads();
+      test_threads(num_threads, threaded);
       break;
     default:
-      rotating();
+      std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
       break;
   }
   return 0;

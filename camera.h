@@ -31,15 +31,12 @@ class camera {
 
     void render(const hittable& world) {
       initialize();
-
-      num_threads = std::thread::hardware_concurrency() <= 8 ? std::thread::hardware_concurrency() - 1: 3; 
-
       // support multithreading && multithreading flag set
       if (num_threads > 1 && threaded) {
         // single threading code goes here
+        num_threads = std::thread::hardware_concurrency() <= num_threads ? std::thread::hardware_concurrency() - 1: num_threads; 
         std::clog << "threads: " << num_threads << std::endl;
         std::vector<std::thread> threads(num_threads);
-        std::vector<color*> scanline(image_width);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         // the main render loop
@@ -66,10 +63,12 @@ class camera {
           threads.clear();
           scanlines.clear();
         }
+        std::clog << "\rDone.               \n";
       }
 
       else {
 
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         for (int j = 0; j < image_height; j++) {
           std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
           for (int i = 0; i < image_width; i++) {
