@@ -29,6 +29,7 @@ class camera {
     bool threaded = false;
     int num_threads = 0;
 
+
     void render(const hittable& world) {
       initialize();
       // support multithreading && multithreading flag set
@@ -48,7 +49,18 @@ class camera {
           // initialize the threads
           for (size_t t_idx = 0; t_idx < num_threads && line < image_height; line++, t_idx++) {
             // threads take in: thread index, line #, the scanline buffer, and the world object
-            threads.emplace_back([this, t_idx, line, &scanlines, &world](){this->render_line(t_idx, line, scanlines, world); });
+            threads.emplace_back([this, t_idx, line, &scanlines, &world](){
+                //this->render_line(t_idx, line, scanlines, world); 
+              for (int i = 0; i < image_width; i++) {
+                color pixel_color(0,0,0);
+                for (int sample = 0; sample < samples_per_pixel; sample++) {
+                  ray r = get_ray(i, line);
+                  pixel_color += ray_color(r, max_depth, world);
+                }
+                //std::clog << pixel_color.x() << pixel_color.y() << pixel_color.z() << std::endl;
+                scanlines[t_idx * image_width + i] = pixel_color;
+              }
+            });
           }
 
           // join all the threads
@@ -80,8 +92,8 @@ class camera {
             write_color(std::cout, pixel_samples_scale * pixel_color);
           }
 
-        std::clog << "\rDone.               \n";
         }
+        std::clog << "\rDone.               \n";
       }
     }
 
@@ -134,6 +146,7 @@ class camera {
 
     }
 
+    /*
     void render_line(size_t idx, int line, std::vector<color>& scanlines, const hittable& world) {
       for (int i = 0; i < image_width; i++) {
         color pixel_color(0,0,0);
@@ -145,6 +158,7 @@ class camera {
         scanlines[idx * image_width + i] = pixel_color;
       }
     }
+    */
 
     ray get_ray(int i, int j) const {
       auto offset = sample_square();

@@ -367,7 +367,7 @@ void rotating() {
   cam.render(world);
 }
 
-void test_threads(int num_t, int threaded) {
+void test_threads(int num_t, bool threaded) {
 
   hittable_list world;
   auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
@@ -416,13 +416,14 @@ void test_threads(int num_t, int threaded) {
 
 int main(int argc, char* argv[]) {
 
-  int opt, threaded;
+  bool threaded;
   int scene = 0;
   int num_threads = 0;
 
 
   // light command line parser with getopt basically stolen from the man page
   // order matters
+  int opt;
   while ((opt = getopt(argc, argv, "hs:t:")) != -1) {
     switch(opt) {
       case 'h':
