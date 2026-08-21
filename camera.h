@@ -32,9 +32,8 @@ class camera {
 
     void render(const hittable& world) {
       initialize();
-      // support multithreading && multithreading flag set
+
       if (num_threads > 1 && threaded) {
-        // single threading code goes here
         num_threads = std::thread::hardware_concurrency() <= num_threads ? std::thread::hardware_concurrency() - 1: num_threads; 
         std::clog << "threads: " << num_threads << std::endl;
         std::vector<std::thread> threads(num_threads);
@@ -46,24 +45,19 @@ class camera {
           std::clog << "\rScanlines remaining: " << (image_height - line) << ' ' << std::flush;
           std::vector<color> scanlines(image_width * num_threads);
 
-          // initialize the threads
           for (size_t t_idx = 0; t_idx < num_threads && line < image_height; line++, t_idx++) {
-            // threads take in: thread index, line #, the scanline buffer, and the world object
+            // initialize the threads
             threads.emplace_back([this, t_idx, line, &scanlines, &world](){
-                //this->render_line(t_idx, line, scanlines, world); 
               for (int i = 0; i < image_width; i++) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; sample++) {
                   ray r = get_ray(i, line);
                   pixel_color += ray_color(r, max_depth, world);
                 }
-                //std::clog << pixel_color.x() << pixel_color.y() << pixel_color.z() << std::endl;
                 scanlines[t_idx * image_width + i] = pixel_color;
               }
             });
           }
-
-          // join all the threads
           for (auto& t : threads) {
             if (t.joinable()) t.join();
           }
@@ -72,14 +66,14 @@ class camera {
           for (auto pixel_color : scanlines) {
             write_color(std::cout, pixel_samples_scale * pixel_color);
           }
+
           threads.clear();
-          scanlines.clear();
         }
         std::clog << "\rDone.               \n";
       }
 
+      // original single-threaded version of the application
       else {
-
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         for (int j = 0; j < image_height; j++) {
           std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;

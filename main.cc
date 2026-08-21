@@ -430,14 +430,23 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
         break;
       case 's':
-        scene = atoi(optarg);
+        scene = std::atoi(optarg);
+        if (scene == 0) {
+          std::clog << "You've chosen an invalid scene or your command could not be parsed" << std::endl;
+          fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
+        }
         break;
       case 't':
-        num_threads = atoi(optarg);
+        num_threads = std::atoi(optarg);
+        if (scene <= 0) {
+          std::clog << "You've chosen an invalid number of threads or your command could not be parsed" << std::endl;
+          fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads > 1]\nOrder is strict", argv[0]);
+          break;
+        }
         threaded = 1;
         break;
       default:
-        //fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
+        fprintf(stderr, "Incorrect ussage of the program\nUsage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
