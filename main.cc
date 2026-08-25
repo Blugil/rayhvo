@@ -386,7 +386,7 @@ void test_threads(int num_t, bool threaded) {
 
   world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
 
-  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), red);
+  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), white);
 
   box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
   box2->translate(vec3(195, 195, 195));
@@ -396,7 +396,7 @@ void test_threads(int num_t, bool threaded) {
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 100;
-  cam.samples_per_pixel = 100;
+  cam.samples_per_pixel = 500;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -419,7 +419,6 @@ int main(int argc, char* argv[]) {
   bool threaded;
   int scene = 0;
   int num_threads = 0;
-
 
   // light command line parser with getopt basically stolen from the man page
   // order matters
