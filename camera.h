@@ -1,20 +1,23 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include "color.h"
 #include "hittable.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "raytracer.h"
 #include "vec3.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "external/stb_image_write.h"
 
 
 #include <ostream>
+#include <string>
 #include <thread>
 
 enum image_save {
-  NONE = 0,
+  STDOUT = 0,
   PNG = 1,
   JPG = 2,
 };
@@ -39,12 +42,13 @@ class camera {
     bool threaded = false;
     int num_threads = 0;
 
-    image_save ftype = NONE;
+    image_save ftype = PNG;
+    char const *file_n = nullptr;
 
     void render(const hittable& world) {
       initialize();
 
-      std::vector<char> image(image_width * color_channel * image_height);
+      char *image = new char[image_width * color_channel * image_height]();
 
       if (num_threads > 1 && threaded) {
 
@@ -60,24 +64,23 @@ class camera {
         std::clog << "threads: " << num_threads << std::endl;
         std::vector<std::thread> threads(num_threads);
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         // the main render loop
         for (int line = 0; line < image_height;) {
-
           std::clog << "\rScanlines remaining: " << (image_height - line) << ' ' << std::flush;
           for (size_t t_idx = 0; t_idx < num_threads && line < image_height; ++line, ++t_idx) {
             // threads render out a single line of the image to be saved to the image buffer
             threads.emplace_back([this, line, &image, &world](){
-              for (int i = 0; i < image_width; ++i) {
+              for (int row = 0; row < image_width; ++row) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                  ray r = get_ray(i, line);
+                  ray r = get_ray(row, line);
                   pixel_color += ray_color(r, max_depth, world);
                 }
-                image[line * image_width + 0] = (char)pixel_color.x();
-                image[line * image_width + 1] = (char)pixel_color.y();
-                image[line * image_width + 2] = (char)pixel_color.z();
-                //image[line * image_width + i] = pixel_color;
+                uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
+                size_t idx = (line * image_width + row) * 3;
+                image[idx + 0] = ((pixel >> 16) & 0xFF); // r
+                image[idx + 1] = ((pixel >> 8) & 0xFF); // g
+                image[idx + 2] = (pixel & 0xFF); // b
               }
             });
           }
@@ -91,31 +94,29 @@ class camera {
 
       // original single-threaded version of the application
       else {
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         for (int line = 0; line < image_height; ++line) {
           std::clog << "\rScanlines remaining: " << (image_height - line) << ' ' << std::flush;
-          for (int i = 0; i < image_width; ++i) {
+          for (int row = 0; row < image_width; ++row) {
             color pixel_color(0,0,0);
             for (int sample = 0; sample < samples_per_pixel; ++sample) {
-              ray r = get_ray(i, line);
+              ray r = get_ray(row, line);
               pixel_color += ray_color(r, max_depth, world);
             }
-            image[line * image_width + 0] = (char)pixel_color.x();
-            image[line * image_width + 1] = (char)pixel_color.y();
-            image[line * image_width + 2] = (char)pixel_color.z();
-            //image[line * image_width + i] = pixel_color;
+
+            uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
+            size_t idx = (line * image_width + row) * 3;
+            image[idx + 0] = ((pixel >> 16) & 0xFF); // r
+            image[idx + 1] = ((pixel >> 8) & 0xFF); // g
+            image[idx + 2] = (pixel & 0xFF); // b
           }
         }
       }
       // write to file code, right now we just dump into the stdout like normal
-      /*
-      for (auto pixel_color : image) {
-        write_color(std::cout, pixel_samples_scale * pixel_color);
-      }
-      */
+      write_image_to_file((char *)file_n, image);
       std::clog << "\rDone.               \n";
 
-      image.clear();
+      // gotta clean up after myself
+      delete[] image;
     }
 
 
@@ -167,28 +168,25 @@ class camera {
 
     }
 
-    int write_image_to_file(char* filename, const std::vector<char> pixels) {
+    int write_image_to_file(char* filename, char* bpixels) {
 
       //TODO
-      //
-      //std_image functions want an array of pixel channels instead of packed 32bit ints
-      //can probably just manually save each entry into the char array, with "comp" being # channels
-      //start with 3 channel (no alpha channel)
       //CLI flags take -p (as save to png) with a filename attachment 
       
       switch(ftype) {
+        case STDOUT:
+          break;
         case PNG:
           //png stuff
-          
+          return stbi_write_png(filename, image_width, image_height, color_channel, bpixels, 0); // 0 stride bytes
           break;
         case JPG:
           //jpg stuff for later
-          break;
         default:
           //i imagine the original stdio redirect technique goes here
+          return 0;
           break;
       }
-
 
       return 1;
     }

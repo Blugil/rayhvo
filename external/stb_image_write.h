@@ -1216,7 +1216,7 @@ STBIWDEF int stbi_write_png(char const *filename, int x, int y, int comp, const 
 {
    FILE *f;
    int len;
-   unsigned ihar *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
+   unsigned char *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
    if (png == NULL) return 0;
 
    f = stbiw__fopen(filename, "wb");

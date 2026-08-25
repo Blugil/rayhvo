@@ -13,7 +13,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
-#include <thread>
 
 #include "unistd.h"
 
@@ -367,7 +366,7 @@ void rotating() {
   cam.render(world);
 }
 
-void test_threads(int num_t, bool threaded) {
+void test_latest(int num_t, bool threaded, image_save save_type, char const *filename) {
 
   hittable_list world;
   auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
@@ -396,11 +395,11 @@ void test_threads(int num_t, bool threaded) {
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 100;
-  cam.samples_per_pixel = 500;
+  cam.samples_per_pixel = 200;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
-  cam.vfov = 40;
+  cam.vfov = 35;
   cam.lookfrom = point3(278, 278, -800);
   cam.lookat = point3(278, 278, 0);
   cam.vup = vec3(0,1,0);
@@ -409,6 +408,9 @@ void test_threads(int num_t, bool threaded) {
 
   cam.num_threads = num_t;
   cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
 
   cam.render(world);
 }
@@ -419,11 +421,14 @@ int main(int argc, char* argv[]) {
   bool threaded;
   int scene = 0;
   int num_threads = 0;
+  image_save save_type = STDOUT;
+
+  char const *filename = nullptr;
 
   // light command line parser with getopt basically stolen from the man page
   // order matters
   int opt;
-  while ((opt = getopt(argc, argv, "hs:t:")) != -1) {
+  while ((opt = getopt(argc, argv, "hs:t:j:p:")) != -1) {
     switch(opt) {
       case 'h':
         printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
@@ -444,6 +449,14 @@ int main(int argc, char* argv[]) {
         }
         threaded = 1;
         break;
+      case 'j':
+        // jpg stuff for later
+        break;
+      case 'p':
+        // probably need to validate the string here
+        // should not make its way to the library
+        save_type = PNG;
+        filename = optarg; 
       default:
         fprintf(stderr, "Incorrect ussage of the program\nUsage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -479,7 +492,7 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      test_threads(num_threads, threaded);
+      test_latest(num_threads, threaded);
       break;
     default:
       std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;

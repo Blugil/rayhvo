@@ -47,11 +47,15 @@ uint32_t pack_color(const color pixel_color) {
   int gbyte = int(256 * intensity.clamp(g));
   int bbyte = int(256 * intensity.clamp(b));
 
-  uint32_t pack = 0;
-  pack ^= rbyte << 24;
-  pack ^= gbyte << 16;
-  pack ^= bbyte << 8;
+  //std::cout << "\npacked byte values: " << std::hex << rbyte << gbyte << bbyte << std::endl;
 
+  uint32_t pack = 0;
+  pack ^= ((rbyte << 16) & 0xFF0000);
+  pack ^= (gbyte << 8) & 0xFF00;
+  pack ^= (bbyte & 0xFF);
+  pack &= 0xFFFFFF;
+
+  //std::cout << "packed byte: " << std::hex << pack << std::endl;
   return pack;
 }
 
