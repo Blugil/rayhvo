@@ -79,8 +79,8 @@ class camera {
                 uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
                 size_t idx = (line * image_width + row) * 3;
                 image[idx + 0] = ((pixel >> 16) & 0xFF); // r
-                image[idx + 1] = ((pixel >> 8) & 0xFF); // g
-                image[idx + 2] = (pixel & 0xFF); // b
+                image[idx + 1] = ((pixel >> 8) & 0xFF);  // g
+                image[idx + 2] = (pixel & 0xFF);         // b
               }
             });
           }
@@ -106,8 +106,8 @@ class camera {
             uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
             size_t idx = (line * image_width + row) * 3;
             image[idx + 0] = ((pixel >> 16) & 0xFF); // r
-            image[idx + 1] = ((pixel >> 8) & 0xFF); // g
-            image[idx + 2] = (pixel & 0xFF); // b
+            image[idx + 1] = ((pixel >> 8) & 0xFF);  // g
+            image[idx + 2] = (pixel & 0xFF);         // b
           }
         }
       }
@@ -172,9 +172,17 @@ class camera {
 
       //TODO
       //CLI flags take -p (as save to png) with a filename attachment 
-      
       switch(ftype) {
         case STDOUT:
+          // localized cout from the binary array
+          std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+          for (size_t line = 0; line < image_height; ++line) {
+            for (size_t row = 0; row < image_width; ++row) {
+              size_t idx = (line * image_width + row) * color_channel;
+              const color pixel_color = color(bpixels[idx + 0], bpixels[idx + 1], bpixels[idx + 2]);
+              write_color(std::cout, pixel_color);
+            }
+          }
           break;
         case PNG:
           //png stuff

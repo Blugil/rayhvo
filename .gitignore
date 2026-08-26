@@ -3,6 +3,9 @@
 *.out
 *.ppm
 .DS_STORE
+*.jpg
+*.png
+*.jpeg
 images/*.jpg
 images/*.png
 images/*.jpeg

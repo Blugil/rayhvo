@@ -428,7 +428,7 @@ int main(int argc, char* argv[]) {
   // light command line parser with getopt basically stolen from the man page
   // order matters
   int opt;
-  while ((opt = getopt(argc, argv, "hs:t:j:p:")) != -1) {
+  while ((opt = getopt(argc, argv, "hs:t:j:op:")) != -1) {
     switch(opt) {
       case 'h':
         printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
@@ -451,12 +451,19 @@ int main(int argc, char* argv[]) {
         break;
       case 'j':
         // jpg stuff for later
+        fprintf(stderr, "Unfortunately jpg output hasn't been supported yet, please try png output");
+        exit(EXIT_FAILURE);
+        break;
+      case 'o':
+        save_type = STDOUT;
+        filename = nullptr;
         break;
       case 'p':
         // probably need to validate the string here
         // should not make its way to the library
         save_type = PNG;
         filename = optarg; 
+        break;
       default:
         fprintf(stderr, "Incorrect ussage of the program\nUsage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -492,7 +499,7 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      test_latest(num_threads, threaded);
+      test_latest(num_threads, threaded, save_type, filename);
       break;
     default:
       std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
