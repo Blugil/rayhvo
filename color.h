@@ -17,9 +17,9 @@ inline double linear_to_gamma(double linear_component) {
 void write_color(std::ostream& out, const color& pixel_color) {
   // should never get here without already being in a normalized pixel channel format
   // since it takes binary pixel data from the below function
-  int r = (int)pixel_color.x();
-  int g = (int)pixel_color.y();
-  int b = (int)pixel_color.z();
+  uint32_t r = (uint8_t)pixel_color.x();
+  uint32_t g = (uint8_t)pixel_color.y();
+  uint32_t b = (uint8_t)pixel_color.z();
   
   out << r << ' ' << g << ' ' << b << '\n';
 }

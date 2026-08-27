@@ -11,7 +11,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "external/stb_image_write.h"
 
-
 #include <ostream>
 #include <string>
 #include <thread>
@@ -77,7 +76,7 @@ class camera {
                   pixel_color += ray_color(r, max_depth, world);
                 }
                 uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
-                size_t idx = (line * image_width + row) * 3;
+                size_t idx = (line * image_width + row) * color_channel;
                 image[idx + 0] = ((pixel >> 16) & 0xFF); // r
                 image[idx + 1] = ((pixel >> 8) & 0xFF);  // g
                 image[idx + 2] = (pixel & 0xFF);         // b
@@ -104,7 +103,7 @@ class camera {
             }
 
             uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
-            size_t idx = (line * image_width + row) * 3;
+            size_t idx = (line * image_width + row) * color_channel;
             image[idx + 0] = ((pixel >> 16) & 0xFF); // r
             image[idx + 1] = ((pixel >> 8) & 0xFF);  // g
             image[idx + 2] = (pixel & 0xFF);         // b
@@ -150,12 +149,9 @@ class camera {
       u = unit_vector(cross(vup, w));
       v = cross(w, u);
 
-
       auto viewport_u = viewport_width * u;
       auto viewport_v = viewport_height * -v;
 
-      
-      //calculate the horizontal and vertical delta vectors from pixel to pixel 
       pixel_delta_u = viewport_u / image_width;
       pixel_delta_v = viewport_v / image_height;
 
@@ -171,10 +167,9 @@ class camera {
     int write_image_to_file(char* filename, char* bpixels) {
 
       //TODO
-      //CLI flags take -p (as save to png) with a filename attachment 
       switch(ftype) {
         case STDOUT:
-          // localized cout from the binary array
+          // localized stdout from the binary array in ppm format
           std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
           for (size_t line = 0; line < image_height; ++line) {
             for (size_t row = 0; row < image_width; ++row) {
@@ -183,6 +178,7 @@ class camera {
               write_color(std::cout, pixel_color);
             }
           }
+          return 0;
           break;
         case PNG:
           //png stuff
@@ -192,26 +188,14 @@ class camera {
           //jpg stuff for later
         default:
           //i imagine the original stdio redirect technique goes here
-          return 0;
+          std::clog << "No output type selected, please use as directed:" << std::endl;
+          fprintf(stderr, "nUsage: [-s scenes (1-9)] [-t nthreads] [-j (jpg) / -p (png) / -o (stdout) \n");
+          return 1;
           break;
       }
 
       return 1;
     }
-
-    /*
-    void render_line(size_t idx, int line, std::vector<color>& scanlines, const hittable& world) {
-      for (int i = 0; i < image_width; i++) {
-        color pixel_color(0,0,0);
-        for (int sample = 0; sample < samples_per_pixel; sample++) {
-          ray r = get_ray(i, line);
-          pixel_color += ray_color(r, max_depth, world);
-        }
-        //std::clog << pixel_color.x() << pixel_color.y() << pixel_color.z() << std::endl;
-        scanlines[idx * image_width + i] = pixel_color;
-      }
-    }
-    */
 
     ray get_ray(int i, int j) const {
       auto offset = sample_square();
@@ -237,7 +221,7 @@ class camera {
     }
 
     // option for a sample disk function, which is used in the github
-
+    
     color ray_color(const ray& r, int depth, const hittable& world) const {
       if (depth <= 0) {
         return color(0,0,0);
