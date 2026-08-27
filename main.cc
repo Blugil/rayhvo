@@ -10,7 +10,11 @@
 #include "texture.h"
 #include "vec3.h"
 
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
+
+#include "unistd.h"
 
 void many_spheres() {
 
@@ -340,15 +344,15 @@ void rotating() {
 
   shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), red);
 
-  box2->translate(vec3(195, 195, 195));
   box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  box2->translate(vec3(195, 195, 195));
   world.add(box2);
 
   camera cam;
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 400;
-  cam.samples_per_pixel = 5000;
+  cam.samples_per_pixel = 100;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -362,15 +366,113 @@ void rotating() {
   cam.render(world);
 }
 
+void test_latest(int num_t, bool threaded, image_save save_type, char const *filename) {
+
+  hittable_list world;
+  auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(25,25,25));
+
+
+  world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // right wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // left wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), green)); //bottom wall
+  world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), green)); // top wall
+  world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));// back wall
+
+
+  world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
+
+  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), white);
+
+  box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  box2->translate(vec3(195, 195, 195));
+  world.add(box2);
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 100;
+  cam.samples_per_pixel = 200;
+  cam.max_depth = 50;
+  cam.background = color(0, 0, 0);
+
+  cam.vfov = 35;
+  cam.lookfrom = point3(278, 278, -800);
+  cam.lookat = point3(278, 278, 0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
+
+  cam.render(world);
+}
+
 
 int main(int argc, char* argv[]) {
 
-  auto scene = 8;
+  bool threaded;
+  int scene = 0;
+  int num_threads = 0;
+  image_save save_type = STDOUT;
 
-  if (argc >= 2) {
-    scene = std::stoi(argv[1]);
+  char const *filename = nullptr;
+
+  // light command line parser with getopt basically stolen from the man page
+  // order matters
+  int opt;
+  while ((opt = getopt(argc, argv, "hs:t:j:op:")) != -1) {
+    switch(opt) {
+      case 'h':
+        printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
+        break;
+      case 's':
+        scene = std::atoi(optarg);
+        if (scene == 0) {
+          std::clog << "You've chosen an invalid scene or your command could not be parsed" << std::endl;
+          fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
+        }
+        break;
+      case 't':
+        num_threads = std::atoi(optarg);
+        if (scene <= 0) {
+          std::clog << "You've chosen an invalid number of threads or your command could not be parsed" << std::endl;
+          fprintf(stderr, "Usage: %s [-s scenes (1-9)] [-t nthreads > 1]\nOrder is strict", argv[0]);
+          break;
+        }
+        threaded = 1;
+        break;
+      case 'j':
+        // jpg stuff for later
+        fprintf(stderr, "Unfortunately jpg output hasn't been supported yet, please try png output");
+        exit(EXIT_FAILURE);
+        break;
+      case 'o':
+        save_type = STDOUT;
+        filename = nullptr;
+        break;
+      case 'p':
+        // probably need to validate the string here
+        // should not make its way to the library
+        save_type = PNG;
+        filename = optarg; 
+        break;
+      default:
+        fprintf(stderr, "Incorrect ussage of the program\nUsage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
   }
 
+  
+  //fprintf(stderr, "scene: %d, threads: %d\n", scene, num_threads);
+  //std::clog << "scene: " << scene << " threads: " << num_threads << std::endl;
   switch(scene) {
     case 1:
       many_spheres();
@@ -396,8 +498,11 @@ int main(int argc, char* argv[]) {
     case 8:
       rotating();
       break;
+    case 9:
+      test_latest(num_threads, threaded, save_type, filename);
+      break;
     default:
-      rotating();
+      std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
       break;
   }
   return 0;
