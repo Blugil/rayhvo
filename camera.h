@@ -101,7 +101,6 @@ class camera {
               ray r = get_ray(row, line);
               pixel_color += ray_color(r, max_depth, world);
             }
-
             uint32_t pixel = pack_color(pixel_samples_scale * pixel_color);
             size_t idx = (line * image_width + row) * color_channel;
             image[idx + 0] = ((pixel >> 16) & 0xFF); // r
@@ -174,8 +173,7 @@ class camera {
           for (size_t line = 0; line < image_height; ++line) {
             for (size_t row = 0; row < image_width; ++row) {
               size_t idx = (line * image_width + row) * color_channel;
-              const color pixel_color = color(bpixels[idx + 0], bpixels[idx + 1], bpixels[idx + 2]);
-              write_color(std::cout, pixel_color);
+              printf("%u %u %u\n", bpixels[idx + 0] & 0xff, bpixels[idx + 1] & 0xff,bpixels[idx + 2] & 0xff);
             }
           }
           return 0;
