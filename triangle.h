@@ -13,20 +13,21 @@
 class triangle : public hittable {
   public:
 
-    triangle(const point3& Q, const vec3& u, const vec3& v, shared_ptr<material> mat) 
-      : Q(Q), u(u), v(v), mat(mat)
+    triangle(const point3& A, const point3& B, const point3& C, shared_ptr<material> mat) 
+      : A(A), B(B), C(C), mat(mat)
     {
-
+      u = B - A;
+      v = C - A;
       auto n = cross(u, v);
       normal = unit_vector(n);
-      D = dot(normal, Q);
+      D = dot(normal, A);
       w = n / dot(n, n);
       set_bounding_box();
     }
 
     virtual void set_bounding_box() {
-      auto bbox_diagonal1 = aabb(Q, Q + u + v);
-      auto bbox_diagonal2 = aabb(Q + u, Q + v);
+      auto bbox_diagonal1 = aabb(A, A + u + v);
+      auto bbox_diagonal2 = aabb(A + u, A + v);
       bbox = aabb(bbox_diagonal1, bbox_diagonal2);
     }
 
@@ -45,7 +46,7 @@ class triangle : public hittable {
 
       auto intersection = r.at(t);
 
-      vec3 planar_hitpt_vector = intersection - Q;
+      vec3 planar_hitpt_vector = intersection - A;
       auto alpha = dot(w, cross(planar_hitpt_vector, v));
       auto beta = dot(w, cross(u, planar_hitpt_vector));
 
@@ -63,7 +64,7 @@ class triangle : public hittable {
 
     virtual bool is_interior(double a, double b, hit_record& rec) const {
       interval unit_interval = interval(0, 1);
-      if (a < 0 || b < 0 || a + b > 1)
+      if (a < 0 || b < 0 || a + b >= 1)
         return false;
 
       rec.u = a;
@@ -74,11 +75,11 @@ class triangle : public hittable {
 
     // translates to a point 
     void translate(const vec3& t_vector) override {
-      this->Q = Q + t_vector; 
+      this->A = A + t_vector; 
 
       auto n = cross(u, v);
       this->normal = unit_vector(n);
-      this->D = dot(normal, Q);
+      this->D = dot(normal, A);
       this->w = n / dot(n, n);
 
       set_bounding_box();
@@ -88,13 +89,13 @@ class triangle : public hittable {
     void rotate_axis(double x, double y, double z, const point3& p) override {
       translate(-p);
 
-      this->Q = rotate_point(this->Q, z, y, x);
+      this->A = rotate_point(this->A, z, y, x);
       this->u = rotate_vector(this->u, z, y, x);
       this->v = rotate_vector(this->v, z, y, x);
 
       auto n = cross(u, v);
       this->normal = unit_vector(n);
-      this->D = dot(normal, Q);
+      this->D = dot(normal, A);
       this->w = n / dot(n, n);
       set_bounding_box();
 
@@ -102,7 +103,7 @@ class triangle : public hittable {
     }
 
   private:
-    point3 Q;
+    point3 A, B, C;
     vec3 u, v;
     vec3 w;
     shared_ptr<material> mat;
