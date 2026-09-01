@@ -218,8 +218,6 @@ class camera {
       return camera_center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
 
-    // option for a sample disk function, which is used in the github
-    
     color ray_color(const ray& r, int depth, const hittable& world) const {
       if (depth <= 0) {
         return color(0,0,0);

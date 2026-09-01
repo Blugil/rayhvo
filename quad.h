@@ -15,11 +15,11 @@ class quad : public hittable {
     quad(const point3& Q, const vec3& u, const vec3& v, shared_ptr<material> mat) 
       : Q(Q), u(u), v(v), mat(mat)
     {
-
       auto n = cross(u, v);
       normal = unit_vector(n);
       D = dot(normal, Q);
       w = n / dot(n, n);
+    
       set_bounding_box();
     }
 
@@ -52,10 +52,9 @@ class quad : public hittable {
         return false;
 
       rec.t = t;
-      rec.p  = intersection;
+      rec.p = intersection;
       rec.mat = mat;
       rec.set_face_normal(r, normal);
-
 
       return true;
     }

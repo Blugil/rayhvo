@@ -9,6 +9,7 @@ class aabb {
     static const aabb empty, universe;
 
     interval x, y, z;
+
     aabb() {}
 
     aabb(const interval& x, const interval& y, const interval& z)
@@ -56,9 +57,9 @@ class aabb {
           if (t0 < ray_t.max) ray_t.max = t0;
         }
 
-        if (ray_t.max <= ray_t.min) return false;
+        if (ray_t.max < ray_t.min) // TEMP CHANGE
+          return false;
       }
-
       return true;
     }
 
@@ -72,15 +73,10 @@ class aabb {
     }
 
     point3 centroid() {
-      // find the centroid 
       auto x_center = ((x.max - x.min) / 2.0) + x.min;
       auto y_center = ((y.max - y.min) / 2.0) + x.min;
       auto z_center = ((z.max - z.min) / 2.0) + x.min;
-
-      
       auto centroid = point3(x_center, y_center, z_center);
-      std::clog << x_center << " " << y_center << " " << z_center << std::endl;
-    
       return centroid;
     }
 
