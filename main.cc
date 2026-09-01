@@ -375,6 +375,66 @@ void rotating() {
   cam.render(world);
 }
 
+void many_boxes(int num_t, bool threaded, image_save save_type, char const *filename) {
+
+  hittable_list world;
+
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(50,50,50));
+
+  // boxes of size 40
+  for (size_t i = 0; i < 10; ++i) {
+    for (size_t j = 0; j < 10; ++j) {
+      for (size_t k = 0; k < 10; ++k) {
+        auto choose_mat = random_double();
+        shared_ptr<hittable> box1;
+        if (choose_mat < 0.08) {
+          box1 = box(point3(0,0,0), point3(40,40,40), light);
+        }
+        else if (choose_mat < 0.35) {
+          box1 = box(point3(0,0,0), point3(40,40,40), red);
+        }
+        else if (choose_mat < 0.65) {
+          box1 = box(point3(0,0,0), point3(40,40,40), green);
+        }
+        else {
+          box1 = box(point3(0,0,0), point3(40,40,40), blue);
+        }
+        box1->translate(vec3(i * 100, j * 100, k * 100));
+        world.add(box1);
+      }
+    }
+  }
+
+  world = hittable_list(make_shared<bvh_node>(world));
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 600;
+  cam.samples_per_pixel = 1000;
+  cam.max_depth = 50;
+  cam.background = color(0.2, 0.2, 0.2);
+
+  cam.vfov = 60;
+  cam.lookfrom = point3(470, 470, -800);
+  cam.lookat = point3(470, 470, 0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
+
+  cam.render(world);
+
+}
+
 void test_latest(int num_t, bool threaded, image_save save_type, char const *filename) {
 
   hittable_list world;
@@ -577,13 +637,14 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      test_latest(num_threads, threaded, save_type, filename);
+      many_boxes(num_threads, threaded, save_type, filename);
       break;
     case 10:
       triangles(num_threads, threaded, save_type, filename);
       break;
     default:
       std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
+      test_latest(num_threads, threaded, save_type, filename);
       break;
   }
   return 0;
