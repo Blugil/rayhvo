@@ -23,24 +23,28 @@ class bvh_node : public hittable {
 
       int axis = bbox.longest_axis();
 
-      auto comparator = (axis == 0) ? box_x_compare : (axis == 1) ? box_y_compare : box_z_compare;
+      auto comparator = (axis == 0) ? box_x_compare 
+                      : (axis == 1) ? box_y_compare 
+                                    : box_z_compare;
       
-      size_t object_span = end - start;
+      size_t span = end - start;
 
-      if (object_span == 1) {
+
+      if (span == 1) {
         left = right = objects[start];
       }
-      else if(object_span == 2) {
+      else if(span == 2) {
         left = objects[start];
         right = objects[start+1];
       }
       else {
         std::sort(std::begin(objects) + start, std::begin(objects) + end, comparator);
 
-        auto mid = start + object_span/2;
+        auto mid = start + span/2;
         left = make_shared<bvh_node>(objects, start, mid);
         right = make_shared<bvh_node>(objects, mid, end);
       }
+
     }
 
 
@@ -55,9 +59,10 @@ class bvh_node : public hittable {
     }
 
     void translate(const vec3& v) override { return; };
-    void rotate_axis(double x, double y, double z, const point3& p) override { return; };
+    void rotate_axis(double x, double y, double z, const point3& p) override { 
+      return;
+    };
     //void rotate_centroid(double x, double y, double z) override { rotate(x, y, z, bbox.centroid()); };
-
 
     aabb bounding_box() const override { return bbox; }
 
@@ -70,7 +75,6 @@ class bvh_node : public hittable {
       static bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index) {
         auto a_axis_interval = a->bounding_box().axis_interval(axis_index);
         auto b_axis_interval = b->bounding_box().axis_interval(axis_index);
-
         return a_axis_interval.min < b_axis_interval.min;
       }
 

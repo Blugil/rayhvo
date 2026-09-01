@@ -9,11 +9,12 @@ class aabb {
     static const aabb empty, universe;
 
     interval x, y, z;
+
     aabb() {}
 
     aabb(const interval& x, const interval& y, const interval& z)
       : x(x), y(y), z(z) 
-    {
+      {
       pad_to_minimums();
       }
 
@@ -21,12 +22,14 @@ class aabb {
       x = (a[0] <= b[0] ? interval(a[0], b[0]) : interval(b[0], a[0]));
       y = (a[1] <= b[1] ? interval(a[1], b[1]) : interval(b[1], a[1]));
       z = (a[2] <= b[2] ? interval(a[2], b[2]) : interval(b[2], a[2]));
+      pad_to_minimums();
     }
 
     aabb(const aabb& box0, const aabb& box1) {
       x = interval(box0.x, box1.x);
       y = interval(box0.y, box1.y);
       z = interval(box0.z, box1.z);
+      pad_to_minimums();
     }
 
     const interval axis_interval(int n) const {
@@ -56,9 +59,9 @@ class aabb {
           if (t0 < ray_t.max) ray_t.max = t0;
         }
 
-        if (ray_t.max <= ray_t.min) return false;
+        if (ray_t.max <= ray_t.min) // TEMP CHANGE
+          return false;
       }
-
       return true;
     }
 
@@ -72,25 +75,19 @@ class aabb {
     }
 
     point3 centroid() {
-      // find the centroid 
       auto x_center = ((x.max - x.min) / 2.0) + x.min;
       auto y_center = ((y.max - y.min) / 2.0) + x.min;
       auto z_center = ((z.max - z.min) / 2.0) + x.min;
-
-      
       auto centroid = point3(x_center, y_center, z_center);
-      std::clog << x_center << " " << y_center << " " << z_center << std::endl;
-    
       return centroid;
     }
 
   private:
     
     void pad_to_minimums() {
-      double delta = 0.0001;
-      if (x.size() < delta) x = x.expand(delta);
-      if (y.size() < delta) y = y.expand(delta);
-      if (z.size() < delta) z = z.expand(delta);
+      if (x.size() < epsilon) x = x.expand(epsilon);
+      if (y.size() < epsilon) y = y.expand(epsilon);
+      if (z.size() < epsilon) z = z.expand(epsilon);
     }
 
 

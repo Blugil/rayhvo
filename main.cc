@@ -8,6 +8,7 @@
 #include "quad.h"
 #include "sphere.h"
 #include "texture.h"
+#include "triangle.h"
 #include "vec3.h"
 
 #include <cstdio>
@@ -146,7 +147,7 @@ void earth_texture() {
 
 }
 
-void quads() {
+void quads(int num_t, bool threaded, image_save save_type, char const *filename) {
   hittable_list world;
 
   auto earth_texture = make_shared<image_texture>("stare.jpeg");
@@ -163,6 +164,8 @@ void quads() {
   world.add(make_shared<quad>(point3(-2, 3, 1), vec3(4,0,0), vec3(0,0,4), up_white));
   world.add(make_shared<quad>(point3(-2, -3, 5), vec3(4,0,0), vec3(0,0,-4), down_black));
 
+  world = hittable_list(make_shared<bvh_node>(world));
+
   camera cam;
 
   cam.aspect_ratio = 1.0;
@@ -177,6 +180,12 @@ void quads() {
   cam.vup = vec3(0,1,0);
 
   cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
 
   cam.render(world);
 
@@ -352,7 +361,7 @@ void rotating() {
 
   cam.aspect_ratio = 1.0;
   cam.image_width = 400;
-  cam.samples_per_pixel = 100;
+  cam.samples_per_pixel = 1000;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -366,7 +375,131 @@ void rotating() {
   cam.render(world);
 }
 
+void many_boxes(int num_t, bool threaded, image_save save_type, char const *filename) {
+
+  hittable_list world;
+
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(50,50,50));
+
+  // boxes of size 40
+  for (size_t i = 0; i < 10; ++i) {
+    for (size_t j = 0; j < 10; ++j) {
+      for (size_t k = 0; k < 10; ++k) {
+        auto choose_mat = random_double();
+        shared_ptr<hittable> box1;
+        if (choose_mat < 0.08) {
+          box1 = box(point3(0,0,0), point3(40,40,40), light);
+        }
+        else if (choose_mat < 0.35) {
+          box1 = box(point3(0,0,0), point3(40,40,40), red);
+        }
+        else if (choose_mat < 0.65) {
+          box1 = box(point3(0,0,0), point3(40,40,40), green);
+        }
+        else {
+          box1 = box(point3(0,0,0), point3(40,40,40), blue);
+        }
+        box1->translate(vec3(i * 100, j * 100, k * 100));
+        world.add(box1);
+      }
+    }
+  }
+
+  world = hittable_list(make_shared<bvh_node>(world));
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 600;
+  cam.samples_per_pixel = 1000;
+  cam.max_depth = 50;
+  cam.background = color(0.2, 0.2, 0.2);
+
+  cam.vfov = 60;
+  cam.lookfrom = point3(470, 470, -800);
+  cam.lookat = point3(470, 470, 0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
+
+  cam.render(world);
+
+}
+
 void test_latest(int num_t, bool threaded, image_save save_type, char const *filename) {
+
+  hittable_list world;
+  auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
+  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
+  auto light = make_shared<diffuse_light>(color(50,50,50));
+
+  world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // left wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // right wall
+  world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), green)); // top wall
+  world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), green)); //bottom wall
+  world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), red));// back wall
+
+  world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
+
+  shared_ptr<hittable> box1 = box(point3(0, 0, 0), point3(70, 70, 70), white);
+  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(70, 70, 70), white);
+  shared_ptr<hittable> box3 = box(point3(0, 0, 0), point3(70, 70, 70), white);
+  shared_ptr<hittable> box4 = box(point3(0, 0, 0), point3(70, 70, 70), white);
+
+  box1->rotate_axis(-45, -45, 45, box1->bounding_box().centroid());
+  box2->rotate_axis(-45, 45, 45, box2->bounding_box().centroid());
+  box3->rotate_axis(45, -45, 45, box3->bounding_box().centroid());
+  box4->rotate_axis(45, 45, 45, box4->bounding_box().centroid());
+
+  box1->translate(vec3(100, 100, 195));
+  box2->translate(vec3(355, 100, 195));
+  box3->translate(vec3(100, 355, 195));
+  box4->translate(vec3(355, 355, 195));
+  world.add(box1);
+  world.add(box2);
+  world.add(box3);
+  world.add(box4);
+
+  // i feel like this should just lowk be in the camera initialization but w/e
+  world = hittable_list(make_shared<bvh_node>(world));
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 300;
+  cam.samples_per_pixel = 100;
+  cam.max_depth = 50;
+  cam.background = color(0.0, 0.0, 0.0);
+
+  cam.vfov = 35;
+  cam.lookfrom = point3(278, 278, -800);
+  cam.lookat = point3(278, 278, 0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.file_n = filename;
+  cam.ftype = save_type;
+
+  cam.render(world);
+}
+
+
+void triangles(int num_t, bool threaded, image_save save_type, char const *filename) {
 
   hittable_list world;
   auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
@@ -385,11 +518,14 @@ void test_latest(int num_t, bool threaded, image_save save_type, char const *fil
 
   world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
 
-  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), white);
+  //shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(165, 165, 165), white);
 
-  box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
-  box2->translate(vec3(195, 195, 195));
-  world.add(box2);
+  world.add(make_shared<triangle>(point3(150, 150, 332), point3(400, 150, 332), point3(275, 300, 332), red));
+  
+
+  //box2->rotate_axis(45, 45, 45, box2->bounding_box().centroid());
+  //box2->translate(vec3(195, 195, 195));
+  //world.add(box2);
 
   camera cam;
 
@@ -414,6 +550,8 @@ void test_latest(int num_t, bool threaded, image_save save_type, char const *fil
 
   cam.render(world);
 }
+
+
 
 
 int main(int argc, char* argv[]) {
@@ -484,7 +622,7 @@ int main(int argc, char* argv[]) {
       earth_texture();
       break;
     case 4:
-      quads();
+      quads(num_threads, threaded, save_type, filename);
       break;
     case 5:
       simple_light();
@@ -499,10 +637,14 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      test_latest(num_threads, threaded, save_type, filename);
+      many_boxes(num_threads, threaded, save_type, filename);
+      break;
+    case 10:
+      triangles(num_threads, threaded, save_type, filename);
       break;
     default:
       std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
+      test_latest(num_threads, threaded, save_type, filename);
       break;
   }
   return 0;
