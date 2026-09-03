@@ -42,7 +42,7 @@ class camera {
     int num_threads = 0;
 
     image_save ftype = PNG;
-    char const *file_n = nullptr;
+    char const *img_file = nullptr;
 
     void render(const hittable& world) {
       initialize();
@@ -110,7 +110,7 @@ class camera {
         }
       }
       // write to file code, right now we just dump into the stdout like normal
-      write_image_to_file((char *)file_n, image);
+      write_image_to_file((char *)img_file, image);
       std::clog << "\rDone.               \n";
 
       // gotta clean up after myself

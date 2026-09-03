@@ -6,6 +6,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "quad.h"
+#include "mesh.h"
 #include "sphere.h"
 #include "texture.h"
 #include "triangle.h"
@@ -184,7 +185,7 @@ void quads(int num_t, bool threaded, image_save save_type, char const *filename)
   cam.num_threads = num_t;
   cam.threaded = threaded;
 
-  cam.file_n = filename;
+  cam.img_file = filename;
   cam.ftype = save_type;
 
   cam.render(world);
@@ -428,7 +429,7 @@ void many_boxes(int num_t, bool threaded, image_save save_type, char const *file
   cam.num_threads = num_t;
   cam.threaded = threaded;
 
-  cam.file_n = filename;
+  cam.img_file = filename;
   cam.ftype = save_type;
 
   cam.render(world);
@@ -436,70 +437,6 @@ void many_boxes(int num_t, bool threaded, image_save save_type, char const *file
 }
 
 void test_latest(int num_t, bool threaded, image_save save_type, char const *filename) {
-
-  hittable_list world;
-  auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
-  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
-  auto green = make_shared<lambertian>(color(0.05,0.75,0.05));
-  auto blue = make_shared<lambertian>(color(0.05,0.05,0.75));
-  auto light = make_shared<diffuse_light>(color(50,50,50));
-
-  world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // left wall
-  world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), blue)); // right wall
-  world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), green)); // top wall
-  world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), green)); //bottom wall
-  world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), red));// back wall
-
-  world.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-150), light));
-
-  shared_ptr<hittable> box1 = box(point3(0, 0, 0), point3(70, 70, 70), white);
-  shared_ptr<hittable> box2 = box(point3(0, 0, 0), point3(70, 70, 70), white);
-  shared_ptr<hittable> box3 = box(point3(0, 0, 0), point3(70, 70, 70), white);
-  shared_ptr<hittable> box4 = box(point3(0, 0, 0), point3(70, 70, 70), white);
-
-  box1->rotate_axis(-45, -45, 45, box1->bounding_box().centroid());
-  box2->rotate_axis(-45, 45, 45, box2->bounding_box().centroid());
-  box3->rotate_axis(45, -45, 45, box3->bounding_box().centroid());
-  box4->rotate_axis(45, 45, 45, box4->bounding_box().centroid());
-
-  box1->translate(vec3(100, 100, 195));
-  box2->translate(vec3(355, 100, 195));
-  box3->translate(vec3(100, 355, 195));
-  box4->translate(vec3(355, 355, 195));
-  world.add(box1);
-  world.add(box2);
-  world.add(box3);
-  world.add(box4);
-
-  // i feel like this should just lowk be in the camera initialization but w/e
-  world = hittable_list(make_shared<bvh_node>(world));
-
-  camera cam;
-
-  cam.aspect_ratio = 1.0;
-  cam.image_width = 300;
-  cam.samples_per_pixel = 100;
-  cam.max_depth = 50;
-  cam.background = color(0.0, 0.0, 0.0);
-
-  cam.vfov = 35;
-  cam.lookfrom = point3(278, 278, -800);
-  cam.lookat = point3(278, 278, 0);
-  cam.vup = vec3(0,1,0);
-
-  cam.defocus_angle = 0;
-
-  cam.num_threads = num_t;
-  cam.threaded = threaded;
-
-  cam.file_n = filename;
-  cam.ftype = save_type;
-
-  cam.render(world);
-}
-
-
-void triangles(int num_t, bool threaded, image_save save_type, char const *filename) {
 
   hittable_list world;
   auto white = make_shared<lambertian>(color(0.75,0.75,0.75));
@@ -530,8 +467,8 @@ void triangles(int num_t, bool threaded, image_save save_type, char const *filen
   camera cam;
 
   cam.aspect_ratio = 1.0;
-  cam.image_width = 100;
-  cam.samples_per_pixel = 200;
+  cam.image_width = 300;
+  cam.samples_per_pixel = 100;
   cam.max_depth = 50;
   cam.background = color(0, 0, 0);
 
@@ -545,10 +482,45 @@ void triangles(int num_t, bool threaded, image_save save_type, char const *filen
   cam.num_threads = num_t;
   cam.threaded = threaded;
 
-  cam.file_n = filename;
+  cam.img_file = filename;
   cam.ftype = save_type;
 
   cam.render(world);
+}
+
+
+void triangles(int num_t, bool threaded, image_save save_type, char const *obj_file, char const *img_file) {
+
+  hittable_list world;
+  auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+
+  shared_ptr<mesh> m = make_shared<mesh>(obj_file, red);
+
+  world.add(m);
+
+  camera cam;
+
+  cam.aspect_ratio = 1.0;
+  cam.image_width = 300;
+  cam.samples_per_pixel = 100;
+  cam.max_depth = 50;
+  cam.background = color(0.2, 0.1, 0.8);
+
+  cam.vfov = 35;
+  cam.lookfrom = point3(-50, 0, -200);
+  cam.lookat = point3(0,0,0);
+  cam.vup = vec3(0,1,0);
+
+  cam.defocus_angle = 0;
+
+  cam.num_threads = num_t;
+  cam.threaded = threaded;
+
+  cam.img_file = img_file;
+  cam.ftype = save_type;
+
+  cam.render(world);
+
 }
 
 
@@ -561,12 +533,13 @@ int main(int argc, char* argv[]) {
   int num_threads = 0;
   image_save save_type = STDOUT;
 
-  char const *filename = nullptr;
+  char const *img_file = nullptr;
+  char const *obj_file = nullptr;
 
   // light command line parser with getopt basically stolen from the man page
   // order matters
   int opt;
-  while ((opt = getopt(argc, argv, "hs:t:j:op:")) != -1) {
+  while ((opt = getopt(argc, argv, "hs:t:i:j:op:")) != -1) {
     switch(opt) {
       case 'h':
         printf("Usage: %s [-s scenes (1-9)] [-t nthreads]\nOrder is strict", argv[0]);
@@ -587,6 +560,10 @@ int main(int argc, char* argv[]) {
         }
         threaded = 1;
         break;
+      case 'i':
+        // input file for obj
+        obj_file = optarg; 
+        break;
       case 'j':
         // jpg stuff for later
         fprintf(stderr, "Unfortunately jpg output hasn't been supported yet, please try png output");
@@ -594,13 +571,13 @@ int main(int argc, char* argv[]) {
         break;
       case 'o':
         save_type = STDOUT;
-        filename = nullptr;
+        img_file = nullptr;
         break;
       case 'p':
         // probably need to validate the string here
         // should not make its way to the library
         save_type = PNG;
-        filename = optarg; 
+        img_file = optarg; 
         break;
       default:
         fprintf(stderr, "Incorrect ussage of the program\nUsage: %s [-s scenes (1-9)] [-t nthreads]\n", argv[0]);
@@ -622,7 +599,7 @@ int main(int argc, char* argv[]) {
       earth_texture();
       break;
     case 4:
-      quads(num_threads, threaded, save_type, filename);
+      quads(num_threads, threaded, save_type, img_file);
       break;
     case 5:
       simple_light();
@@ -637,14 +614,15 @@ int main(int argc, char* argv[]) {
       rotating();
       break;
     case 9:
-      many_boxes(num_threads, threaded, save_type, filename);
+      many_boxes(num_threads, threaded, save_type, img_file);
       break;
     case 10:
-      triangles(num_threads, threaded, save_type, filename);
+      triangles(num_threads, threaded, save_type, obj_file, img_file);
       break;
     default:
       std::clog << "No prebuilt scenes matching the chosen scene: " << scene << std::endl;
-      test_latest(num_threads, threaded, save_type, filename);
+      std::clog << "Defaulting to the test scene..." << scene << std::endl;
+      test_latest(num_threads, threaded, save_type, img_file);
       break;
   }
   return 0;
