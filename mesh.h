@@ -31,8 +31,7 @@ class mesh : public hittable {
     // each time we construct a face (per the obj file) we add a triangle to the tris vector
     //  - can ignore the texture coordinates and normals for now?
     // this triangle gets constructed
-    // the mesh should be optimized using a bvh accelerator
-    // all the triangle rendering mechanics seem handled by the triangle class
+    // *the mesh should be optimized using a bvh accelerator
 
     mesh() {}
     mesh(char const* filename) {
@@ -120,12 +119,19 @@ class mesh : public hittable {
 
           tris.push_back(std::make_shared<triangle>(A, B, C, mat));
         }
+        else if (option == "#") {
+          continue;
+        }
+        else if (line == "") {
+          continue;
+        }
         // room for more thorough parsing of obj files
         // likely to get its own separate file if expanded beyond toy
         else {
           return false;
         }
       }
+
       return true;
     }
 

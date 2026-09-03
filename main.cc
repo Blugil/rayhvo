@@ -493,7 +493,9 @@ void triangles(int num_t, bool threaded, image_save save_type, char const *obj_f
 
   hittable_list world;
   auto red = make_shared<lambertian>(color(0.75,0.05,0.05));
+  auto light = make_shared<diffuse_light>(color(15,15,15));
 
+  world.add(make_shared<quad>(point3(-20, -20, 0), vec3(-10, 20, 0), vec3(-10, 0, -20), light));
   shared_ptr<mesh> m = make_shared<mesh>(obj_file, red);
 
   world.add(m);
@@ -501,13 +503,13 @@ void triangles(int num_t, bool threaded, image_save save_type, char const *obj_f
   camera cam;
 
   cam.aspect_ratio = 1.0;
-  cam.image_width = 300;
-  cam.samples_per_pixel = 100;
+  cam.image_width = 600;
+  cam.samples_per_pixel = 2000;
   cam.max_depth = 50;
-  cam.background = color(0.2, 0.1, 0.8);
+  cam.background = color(0.0, 0.0, 0.0);
 
   cam.vfov = 35;
-  cam.lookfrom = point3(-50, 0, -200);
+  cam.lookfrom = point3(-50, -50, -200);
   cam.lookat = point3(0,0,0);
   cam.vup = vec3(0,1,0);
 
